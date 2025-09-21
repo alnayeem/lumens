@@ -4,6 +4,10 @@ CHANNELS?=data/channels/islamic_kids.csv
 OUT?=out/islamic_kids
 LIMIT?=25
 
+# Select Python/pip executable (override with: make PY=python)
+PY?=python3
+PIP?=pip3
+
 help:
 	@echo "Targets:"
 	@echo "  test                Run unit tests (pytest)"
@@ -12,25 +16,28 @@ help:
 	@echo "  ingest-fs           Ingest and write to Firestore (requires LUMENS_GCP_PROJECT and ADC)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
+	@echo ""
+	@echo "Variables:"
+	@echo "  PY=$(PY) (override with PY=python)"
+	@echo "  PIP=$(PIP) (override with PIP=pip)"
 
 test:
-	pip install -r requirements-dev.txt
+	$(PIP) install -r requirements-dev.txt
 	pytest -q
 
 install-dev:
-	pip install -r requirements-dev.txt
+	$(PIP) install -r requirements-dev.txt
 
 install-ingest:
-	pip install -r requirements-ingest.txt || pip install google-cloud-firestore
+	$(PIP) install -r requirements-ingest.txt || $(PIP) install google-cloud-firestore
 
 ingest:
-	python -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT)
+	$(PY) -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT)
 
 ingest-no-enrich:
-	python -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT) --no-enrich
+	$(PY) -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT) --no-enrich
 
 # Example: make ingest-fs LIMIT=10 LUMENS_GCP_PROJECT=lumens-alnayeem-dev
 ingest-fs:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT or pass --firestore-project"; exit 2; fi
-	python -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT) --firestore-project $$LUMENS_GCP_PROJECT
-
+	$(PY) -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT) --firestore-project $$LUMENS_GCP_PROJECT
