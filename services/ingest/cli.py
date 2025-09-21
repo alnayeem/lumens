@@ -8,11 +8,25 @@ from typing import Dict, List, Optional
 
 from .lib.env import load_env_files
 from .lib.io import parse_csv, write_outputs
-from .lib.youtube import detect_youtube_ref, resolve_channel_id, iter_channel_videos, iter_playlist_videos
+from .lib.youtube import (
+    detect_youtube_ref,
+    resolve_channel_id,
+    iter_channel_videos,
+    iter_playlist_videos,
+)
 from .lib.enrich import enrich_records
+from .lib.store.firestore_writer import write_firestore_content
 
 
-def run_ingest(channels_csv: Path, out_prefix: Path, limit: int, api_key: str, enrich: bool) -> int:
+def run_ingest(
+    channels_csv: Path,
+    out_prefix: Path,
+    limit: int,
+    api_key: str,
+    enrich: bool,
+    firestore_project: str | None = None,
+    firestore_collection: str = "content",
+) -> int:
     src_rows = parse_csv(channels_csv)
     if not src_rows:
         print(f"No sources found in {channels_csv}")
@@ -57,6 +71,12 @@ def run_ingest(channels_csv: Path, out_prefix: Path, limit: int, api_key: str, e
 
     total, ndjson_path, text_path = write_outputs(all_records, out_prefix)
     print(f"Wrote {total} records → {ndjson_path} and {text_path}")
+    if firestore_project:
+        try:
+            written = write_firestore_content(all_records, firestore_project, firestore_collection)
+            print(f"Stored {written} docs in Firestore project {firestore_project} collection '{firestore_collection}'")
+        except Exception as e:
+            print(f"WARN: Firestore write skipped/failed: {e}")
     return 0
 
 
@@ -73,15 +93,24 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--enrich", dest="enrich", action="store_true", default=True, help="Fetch durations and stats via videos.list (default on)")
     ap.add_argument("--no-enrich", dest="enrich", action="store_false", help="Disable enrichment step to save quota")
     ap.add_argument("--api-key", default=os.getenv("LUMENS_YT_API_KEY"), help="YouTube Data API key (or env LUMENS_YT_API_KEY; .env is auto-loaded if present)")
+    ap.add_argument("--firestore-project", default=os.getenv("LUMENS_GCP_PROJECT"), help="If set, write output to Firestore Native in this GCP project (requires ADC)")
+    ap.add_argument("--firestore-collection", default="content", help="Firestore collection name (default: content)")
     args = ap.parse_args(argv)
 
     if not args.api_key:
         print("ERROR: Provide --api-key or set LUMENS_YT_API_KEY")
         return 2
 
-    return run_ingest(Path(args.channels), Path(args.out), int(args.limit), str(args.api_key), bool(args.enrich))
+    return run_ingest(
+        Path(args.channels),
+        Path(args.out),
+        int(args.limit),
+        str(args.api_key),
+        bool(args.enrich),
+        str(args.firestore_project) if args.firestore_project else None,
+        str(args.firestore_collection),
+    )
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
