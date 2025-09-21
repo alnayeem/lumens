@@ -1,16 +1,18 @@
-.PHONY: help test ingest ingest-no-enrich install-dev install-ingest ingest-fs
+.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached
 
 CHANNELS?=data/channels/islamic_kids.csv
 OUT?=out/islamic_kids
 LIMIT?=25
 
 # Select Python/pip executable (override with: make PY=python)
-PY?=python3
+# Prefer repo-local virtualenv if present
+PY?=$(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 # Default pip to run under the same Python interpreter
 PIP?=$(PY) -m pip
 
 help:
 	@echo "Targets:"
+	@echo "  venv                Create a local virtualenv at ./.venv"
 	@echo "  test                Run unit tests (pytest)"
 	@echo "  ingest              Run ingest with enrichment (uses .env if present)"
 	@echo "  ingest-no-enrich    Run ingest without videos.list enrichment"
@@ -19,10 +21,16 @@ help:
 	@echo "  ingest-cached       Ingest using cached channel mapping (avoids search quota)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
+	@echo "  install-all         Install dev + ingest deps into current Python ($(PY))"
 	@echo ""
 	@echo "Variables:"
 	@echo "  PY=$(PY) (override with PY=python)"
 	@echo "  PIP=$(PIP) (override with PIP=pip)"
+
+venv:
+	python3 -m venv .venv
+	.venv/bin/python -m pip install --upgrade pip
+	@echo "Created venv at .venv. Re-run make commands; Makefile will use .venv/bin/python automatically."
 
 test:
 	$(PIP) install -r requirements-dev.txt
@@ -33,6 +41,8 @@ install-dev:
 
 install-ingest:
 	$(PIP) install -r requirements-ingest.txt || $(PIP) install google-cloud-firestore
+
+install-all: install-dev install-ingest
 
 ingest:
 	$(PY) -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT)
