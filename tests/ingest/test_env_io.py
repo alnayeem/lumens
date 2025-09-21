@@ -8,6 +8,8 @@ from services.ingest.lib.io import parse_csv, write_outputs
 def test_env_loader(tmp_path: Path, monkeypatch):
     # Ensure we don't override existing env
     monkeypatch.setenv("EXISTING", "keep")
+    # Ensure loader sets new keys if not already present
+    monkeypatch.delenv("LUMENS_YT_API_KEY", raising=False)
     envfile = tmp_path / ".env"
     envfile.write_text("""
 # comment
@@ -49,4 +51,3 @@ youtube,https://youtu.be/vidid,Example,short
     assert ndjson_path.exists()
     assert text_path.exists()
     assert "Test Video" in text_path.read_text()
-
