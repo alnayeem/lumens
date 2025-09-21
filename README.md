@@ -40,6 +40,11 @@ Local Ingest (dev)
 - Or use Makefile shortcuts (with defaults):
   - `make ingest LIMIT=25`
   - `make ingest-no-enrich LIMIT=25`
+- Optimize quota usage:
+  - Resolve channels once and cache mapping:
+    - `make resolve-channels CHANNELS=data/channels/islamic_kids.csv CHANNELS_MAP=out/channels_map.json`
+  - Then ingest using cached map and incremental state:
+    - `make ingest-cached LIMIT=25 CHANNELS_MAP=out/channels_map.json STATE=out/state.json`
 - Outputs (git-ignored):
   - `out/islamic_kids.ndjson` (machine-readable)
   - `out/islamic_kids.txt` (human summary)

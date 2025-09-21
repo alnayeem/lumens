@@ -15,6 +15,8 @@ help:
 	@echo "  ingest              Run ingest with enrichment (uses .env if present)"
 	@echo "  ingest-no-enrich    Run ingest without videos.list enrichment"
 	@echo "  ingest-fs           Ingest and write to Firestore (requires LUMENS_GCP_PROJECT and ADC)"
+	@echo "  resolve-channels    Resolve channel refs to UCIDs and cache mapping"
+	@echo "  ingest-cached       Ingest using cached channel mapping (avoids search quota)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
 	@echo ""
@@ -42,3 +44,12 @@ ingest-no-enrich:
 ingest-fs:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT or pass --firestore-project"; exit 2; fi
 	$(PY) -m services.ingest.cli --channels $(CHANNELS) --out $(OUT) --limit $(LIMIT) --firestore-project $$LUMENS_GCP_PROJECT
+
+CHANNELS_MAP?=out/channels_map.json
+STATE?=out/state.json
+
+resolve-channels:
+	$(PY) -m services.ingest.cli --channels $(CHANNELS) --resolve-out $(CHANNELS_MAP)
+
+ingest-cached:
+	$(PY) -m services.ingest.cli --channels $(CHANNELS) --channels-map $(CHANNELS_MAP) --state $(STATE) --out $(OUT) --limit $(LIMIT)

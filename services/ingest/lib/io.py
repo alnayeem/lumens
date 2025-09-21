@@ -5,7 +5,7 @@ import datetime as dt
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 
 
 @dataclass
@@ -70,3 +70,20 @@ def write_outputs(records: Iterable[Dict], out_prefix: Path) -> Tuple[int, Path,
             count += 1
     return count, ndjson_path, text_path
 
+
+def load_json(path: Path) -> Any:
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            import json
+
+            return json.load(f)
+    except FileNotFoundError:
+        return None
+
+
+def save_json(obj: Any, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    import json
+
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
