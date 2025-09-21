@@ -12,9 +12,12 @@ Required:
 Optional:
   -n, --project-name NAME      Display name (default: Lumens Dev)
   --create-api-key             Attempt to create an API key via CLI
+  --setup-firestore            Enable Firestore API and create database (Native)
+  --firestore-location REGION  Firestore region (default: us-central1)
 
 Examples:
   ./tools/gcloud_bootstrap.sh -p lumens-dev-01 -b 000000-AAAAAA-111111 --create-api-key
+  ./tools/gcloud_bootstrap.sh -p lumens-dev-02 -b 000000-AAAAAA-111111 --setup-firestore --firestore-location us-central1
 
 After creation, you can also create/restrict the API key via Console:
   https://console.cloud.google.com/apis/credentials?project=<PROJECT_ID>
@@ -25,6 +28,8 @@ PROJECT_ID=""
 BILLING_ACCOUNT=""
 PROJECT_NAME="Lumens Dev"
 CREATE_KEY=0
+SETUP_FIRESTORE=0
+FIRESTORE_LOCATION="us-central1"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,6 +37,8 @@ while [[ $# -gt 0 ]]; do
     -b|--billing-account) BILLING_ACCOUNT="$2"; shift 2;;
     -n|--project-name) PROJECT_NAME="$2"; shift 2;;
     --create-api-key) CREATE_KEY=1; shift;;
+    --setup-firestore) SETUP_FIRESTORE=1; shift;;
+    --firestore-location) FIRESTORE_LOCATION="$2"; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown arg: $1"; usage; exit 2;;
   esac
@@ -104,7 +111,18 @@ else
   echo "  https://console.cloud.google.com/apis/credentials?project=$PROJECT_ID"
 fi
 
+if [[ "$SETUP_FIRESTORE" -eq 1 ]]; then
+  echo "==> Enabling Firestore API and creating database (Native) if needed"
+  gcloud services enable firestore.googleapis.com
+  # Check if a database exists
+  if gcloud firestore databases describe --project "$PROJECT_ID" >/dev/null 2>&1; then
+    echo "Firestore database already exists in project $PROJECT_ID"
+  else
+    echo "Creating Firestore (Native) in region: $FIRESTORE_LOCATION"
+    gcloud firestore databases create --location="$FIRESTORE_LOCATION" --project "$PROJECT_ID"
+  fi
+fi
+
 echo "==> Done. Next:"
 echo "  export LUMENS_YT_API_KEY=..."
 echo "  python services/ingest/yt_ingest.py --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 100"
-
