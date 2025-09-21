@@ -3,7 +3,7 @@ meta:
   community: islamic_commons
   vertical: kids
   updated_by: "@you"
-  updated_at: "2025-09-19T16:00:00Z"
+  updated_at: "2025-09-21T16:00:00Z"
 eligibility:
   age_range: [5, 12]
   allowed_topics: ["seerah", "arabic", "stories"]
@@ -15,4 +15,3 @@ review:
 labels:
   safe_tags: ["educational", "scripture"]
   risky_tags: ["challenge", "prank"]
-

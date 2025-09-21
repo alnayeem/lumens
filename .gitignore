@@ -14,9 +14,12 @@ node_modules/
 *.pyo
 .pytest_cache/
 
+# Local deploy keys (do not commit)
+tools/deploy_key
+tools/deploy_key.pub
+
 # Terraform (if added later)
 .terraform/
 *.tfstate
 *.tfstate.*
 crash.log
-
