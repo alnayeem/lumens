@@ -9,6 +9,7 @@ What’s here
 - Policy stub: `policies/islamic_commons/kids/policy.yaml`
 - Policy schema: `tools/policy_schema.json`
 - Seed channels: `data/channels/islamic_kids.csv`
+ - Ingest CLI: `services/ingest/yt_ingest.py` (fetch latest YT videos)
 
 IDs & conventions
 - Community: slug (e.g., `islamic_commons`)
@@ -30,8 +31,16 @@ Indexes (suggested)
 - `content`: `topics ARRAY_CONTAINS, published_at DESC`
 - `verticals`: `status ASC, community_id ASC`
 
+Local Ingest (dev)
+- Create `.env` at repo root with your YouTube API key:
+  - `echo 'LUMENS_YT_API_KEY=YOUR_KEY' > .env`
+- Run ingest for the curated list:
+  - `python services/ingest/yt_ingest.py --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 100`
+- Outputs (git-ignored):
+  - `out/islamic_kids.ndjson` (machine-readable)
+  - `out/islamic_kids.txt` (human summary)
+
 Next steps (suggested)
 - Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.
 - Ingest: fetch video metadata for each channel; write `content/*` with `provenance` and partial `signals`.
 - Policy compile: validate YAML → JSON, store compiled snapshot in `policies/*` (and optionally GCS).
-
