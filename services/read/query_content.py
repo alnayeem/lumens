@@ -27,15 +27,20 @@ def query_content(
     out: Optional[Path],
 ) -> int:
     client = _client(project_id)
+    # Import constants/types for modern Firestore query API
+    from google.cloud import firestore as _fs  # type: ignore
+    from google.cloud.firestore_v1 import FieldFilter  # type: ignore
+
     q = client.collection("content")
     # Filters (simple demo)
     if channel_id:
-        q = q.where("channel_id", "==", channel_id)
+        q = q.where(filter=FieldFilter("channel_id", "==", channel_id))
     if topic:
-        q = q.where("topics", "array_contains", topic)
+        q = q.where(filter=FieldFilter("topics", "array_contains", topic))
     if since:
-        q = q.where("published_at", ">=", since)
-    q = q.order_by("published_at", direction=client.field_path("published_at").DESCENDING)
+        # published_at stored as ISO string; lexicographic compare works
+        q = q.where(filter=FieldFilter("published_at", ">=", since))
+    q = q.order_by("published_at", direction=_fs.Query.DESCENDING)
     q = q.limit(limit)
 
     docs = list(q.stream())
@@ -72,4 +77,3 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
