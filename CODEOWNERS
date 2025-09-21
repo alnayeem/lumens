@@ -1,7 +1,6 @@
 # Update @your-github-username or org/team names after creating the org
-*                                           @your-github-username
+*                                           @alnayeem
 
 # Example path ownership (uncomment and adjust once teams exist)
-# /policies/islamic_commons/               @lumens-community/islamic-maintainers
-# /policies/islamic_commons/kids/          @lumens-community/islamic-kids-mods
-
+# /policies/islamic_commons/               @alnayeem
+# /policies/islamic_commons/kids/          @alnayeem
