@@ -1,0 +1,20 @@
+name: python-tests
+
+on:
+  pull_request:
+    paths: [ 'services/ingest/**', 'tests/**', 'requirements-dev.txt', 'pytest.ini' ]
+  push:
+    branches: [ 'main' ]
+    paths: [ 'services/ingest/**', 'tests/**', 'requirements-dev.txt', 'pytest.ini' ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r requirements-dev.txt
+      - name: Run tests
+        run: pytest -q
+

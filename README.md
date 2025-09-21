@@ -9,7 +9,7 @@ What’s here
 - Policy stub: `policies/islamic_commons/kids/policy.yaml`
 - Policy schema: `tools/policy_schema.json`
 - Seed channels: `data/channels/islamic_kids.csv`
- - Ingest CLI: `services/ingest/yt_ingest.py` (fetch latest YT videos)
+- Ingest CLI: `services/ingest/yt_ingest.py` (fetch latest YT videos)
 
 IDs & conventions
 - Community: slug (e.g., `islamic_commons`)
@@ -34,11 +34,23 @@ Indexes (suggested)
 Local Ingest (dev)
 - Create `.env` at repo root with your YouTube API key:
   - `echo 'LUMENS_YT_API_KEY=YOUR_KEY' > .env`
-- Run ingest for the curated list:
+- Run via module (preferred) or legacy path:
+  - `python -m services.ingest.cli --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 100`
   - `python services/ingest/yt_ingest.py --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 100`
+- Or use Makefile shortcuts (with defaults):
+  - `make ingest LIMIT=25`
+  - `make ingest-no-enrich LIMIT=25`
 - Outputs (git-ignored):
   - `out/islamic_kids.ndjson` (machine-readable)
   - `out/islamic_kids.txt` (human summary)
+
+Optional: Write to Firestore (dev)
+- Install Firestore client: `make install-ingest`
+- Authenticate ADC: `gcloud auth application-default login`
+- Set project: `export LUMENS_GCP_PROJECT=lumens-alnayeem-dev`
+- Run ingest + Firestore write:
+  - `make ingest-fs LIMIT=25`
+  - or: `python -m services.ingest.cli --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 25 --firestore-project $LUMENS_GCP_PROJECT`
 
 Next steps (suggested)
 - Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.
