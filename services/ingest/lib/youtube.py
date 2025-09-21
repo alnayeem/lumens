@@ -64,6 +64,24 @@ def yt_api(path: str, params: Dict[str, str], api_key: str, max_attempts: int = 
     raise RuntimeError("Unreachable")
 
 
+def get_uploads_playlist_id(channel_id: str, api_key: str) -> Optional[str]:
+    """Return the channel's uploads playlist ID (low quota path)."""
+    resp = yt_api(
+        "/channels",
+        {"part": "contentDetails", "id": channel_id, "maxResults": "1"},
+        api_key,
+    )
+    items = resp.get("items", [])
+    if not items:
+        return None
+    return (
+        items[0]
+        .get("contentDetails", {})
+        .get("relatedPlaylists", {})
+        .get("uploads")
+    )
+
+
 def detect_youtube_ref(ref: str) -> Tuple[str, str]:
     s = ref.strip()
     if s.startswith("@") and "/" not in s:
@@ -120,6 +138,19 @@ def resolve_channel_id(kind: str, value: str, api_key: str) -> Optional[str]:
 
 
 def iter_channel_videos(channel_id: str, api_key: str, limit: int) -> Iterator[Dict]:
+    """Yield latest videos for a channel.
+
+    Prefers the channel's uploads playlist (playlistItems; 1 unit per call).
+    Falls back to search (100 units per call) if uploads playlist is unavailable.
+    """
+    uploads = get_uploads_playlist_id(channel_id, api_key)
+    if uploads:
+        # Use low-quota playlistItems path
+        for rec in iter_playlist_videos(uploads, api_key, limit):
+            yield rec
+        return
+
+    # Fallback to search (higher quota)
     fetched = 0
     page_token: Optional[str] = None
     while fetched < limit:
