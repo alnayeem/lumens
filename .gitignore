@@ -1,0 +1,22 @@
+# General
+.DS_Store
+*.log
+.env
+.venv/
+venv/
+__pycache__/
+
+# Node
+node_modules/
+
+# Python
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Terraform (if added later)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+

@@ -1,0 +1,9 @@
+version: 1
+communities:
+  islamic_commons:
+    maintainers_team: lumens/islamic-maintainers   # TODO: update to your org/team
+    verticals:
+      kids:
+        approvers_team: lumens/islamic-kids-mods  # TODO: update to your org/team
+        min_approvals: 1
+

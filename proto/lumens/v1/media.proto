@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package lumens.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// Source platforms (MVP focuses on YouTube)
+enum Source {
+  SOURCE_UNSPECIFIED = 0;
+  SOURCE_YOUTUBE = 1;
+  SOURCE_PODCAST_RSS = 2;
+}
+
+// Vertical lifecycle
+enum VerticalStatus {
+  VERTICAL_STATUS_UNSPECIFIED = 0;
+  VERTICAL_ACTIVE = 1;
+  VERTICAL_INACTIVE = 2;
+}
+
+// Channel lifecycle
+enum ChannelStatus {
+  CHANNEL_STATUS_UNSPECIFIED = 0;
+  CHANNEL_ACTIVE = 1;
+  CHANNEL_INACTIVE = 2;
+}
+
+// Policy document scope
+enum PolicyScope {
+  POLICY_SCOPE_UNSPECIFIED = 0;
+  POLICY_SCOPE_COMMUNITY = 1;
+  POLICY_SCOPE_VERTICAL = 2;
+}
+
+// A tenant/community (e.g., Islamic Media Commons)
+message Community {
+  string id = 1;                        // slug, e.g. "islamic_commons"
+  string name = 2;                      // display name
+  string default_org_id = 3;            // Organization.id
+  string policy_doc_id = 4;             // PolicyDoc.id
+  repeated string enabled_vertical_ids = 5; // ["islamic_commons/kids", ...]
+}
+
+// Organizations (central org, mosques, schools, etc.)
+message Organization {
+  string id = 1;                        // e.g. "org_default"
+  string community_id = 2;              // Community.id
+  string name = 3;
+  string kind = 4;                      // "central" | "mosque" | "school" | ...
+  bool is_default = 5;
+}
+
+// Age band used by restrictions (e.g., 5-12)
+message AgeBand {
+  int32 min_inclusive = 1;              // e.g., 5
+  int32 max_inclusive = 2;              // e.g., 12
+}
+
+// Vertical restrictions (fixed config)
+message Restrictions {
+  repeated AgeBand age_bands = 1;       // one or more bands
+  repeated string regions_allowed = 2;  // ISO 3166-1 alpha-2 ("US","GB","MY")
+  repeated string acceptable_topics = 3;// taxonomy slugs
+}
+
+// A vertical lens inside a community (e.g., Kids)
+message Vertical {
+  string id = 1;                        // "{community}/{vertical}", e.g., "islamic_commons/kids"
+  string community_id = 2;              // Community.id
+  string name = 3;                      // "Kids"
+  VerticalStatus status = 4;
+  string policy_doc_id = 5;             // PolicyDoc.id
+  Restrictions restrictions = 6;        // age/region/topic constraints
+  repeated string channel_ids = 7;      // Channel.id
+}
+
+// A creator/author entity
+message Creator {
+  string id = 1;                        // slug or ULID
+  string name = 2;
+  string bio = 3;
+  repeated string languages = 4;        // BCP-47 ("en","ar","ms")
+}
+
+// A channel (e.g., YouTube channel)
+message Channel {
+  string id = 1;                        // "yt:UCxxxx..." (prefix by source)
+  string creator_id = 2;                // Creator.id
+  string organization_id = 3;           // Organization.id (optional)
+  Source source = 4;                    // YOUTUBE (MVP)
+  string source_ref = 5;                // canonical ref (UCid or @handle if unresolved)
+  string title = 6;
+  ChannelStatus status = 7;
+}
+
+// A compiled policy document snapshot
+message PolicyDoc {
+  string id = 1;                        // "{scope}/{name}@{version}"
+  PolicyScope scope = 2;                // COMMUNITY | VERTICAL
+  string version = 3;                   // e.g., "v2025-09-19"
+  google.protobuf.Struct rules = 4;     // compiled deterministic policy (JSON)
+}
+
+// Thumbnail metadata
+message Thumbnail {
+  string url = 1;
+  int32 width = 2;
+  int32 height = 3;
+  string quality = 4;                   // "default","mq","hq","sd","max"
+}
+
+// Age rating derived from policy/ML
+message AgeRating {
+  int32 min_age = 1;                    // derived
+  string scheme = 2;                    // e.g., "lumens-kids"
+  string label = 3;                     // e.g., "5-12"
+}
+
+// Extracted/derived signals for ranking/explainability
+message Signals {
+  string language = 1;                  // lang-id result ("en","ar")
+  reserved 2;                           // was speech_music_ratio
+  repeated string labels = 3;           // keywords/topics
+  double classifier_confidence = 4;     // 0..1
+  google.protobuf.Struct extras = 5;    // source-specific stats
+}
+
+// Ingestion provenance and policy binding
+message Provenance {
+  string ingested_by = 1;               // job name/version
+  google.protobuf.Timestamp ingested_at = 2;
+  string model_version = 3;             // classifier/version
+  string policy_snapshot_id = 4;        // immutable link to PolicyDoc
+  string decision_reason = 5;           // concise reason
+}
+
+// A content item (video/podcast)
+message ContentItem {
+  string id = 1;                        // e.g., "yt:VIDEOID"
+  string channel_id = 2;                // Channel.id
+  string source_item_id = 3;            // raw video id
+  string title = 4;
+  google.protobuf.Timestamp published_at = 5;
+  int32 duration_seconds = 6;
+  repeated string languages = 7;        // detected or declared
+  repeated string regions = 8;          // target/claimed
+  repeated string topics = 9;           // taxonomy slugs
+  AgeRating age_rating = 10;
+  repeated Thumbnail thumbnails = 11;
+  Provenance provenance = 12;
+  Signals signals = 13;
+}
+
+// Community-level channel registry entry
+message CommunityChannel {
+  string community_id = 1;              // Community.id
+  string channel_id = 2;                // Channel.id
+}
+

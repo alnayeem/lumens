@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "version",
+    "meta",
+    "eligibility",
+    "review",
+    "labels"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "required": ["community", "vertical", "updated_by", "updated_at"],
+      "properties": {
+        "community": { "type": "string" },
+        "vertical": { "type": "string" },
+        "updated_by": { "type": "string" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "eligibility": {
+      "type": "object",
+      "required": [
+        "age_range",
+        "allowed_topics",
+        "blocked_topics",
+        "blocked_keywords"
+      ],
+      "properties": {
+        "age_range": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "allowed_topics": { "type": "array", "items": { "type": "string" } },
+        "blocked_topics": { "type": "array", "items": { "type": "string" } },
+        "blocked_keywords": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "required": ["require_human", "reviewers_min"],
+      "properties": {
+        "require_human": { "type": "boolean" },
+        "reviewers_min": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "labels": {
+      "type": "object",
+      "required": ["safe_tags", "risky_tags"],
+      "properties": {
+        "safe_tags": { "type": "array", "items": { "type": "string" } },
+        "risky_tags": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

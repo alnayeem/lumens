@@ -1,0 +1,21 @@
+source,source_ref,name,notes
+youtube,https://www.youtube.com/channel/UC178EmfQAV3OT-UpuO6WUMg,Omar & Hana (English),channel URL (resolve UC)
+youtube,https://www.youtube.com/@One4kids-Zaky,One4Kids / Zaky,@handle (resolve UC)
+youtube,https://www.youtube.com/@Aliandsumaya,Ali and Sumaya,@handle
+youtube,https://www.youtube.com/channel/UCDz4xz5CW-9n4NJ5mrn7RZA,Muslim Kids TV,channel URL
+youtube,https://www.youtube.com/channel/UCIDYe6rgdROl77DDevNIcPA,MiniMuslims,channel URL
+youtube,https://www.youtube.com/c/ZainBhikhaKids,Zain Bhikha Kids,custom URL (resolve)
+youtube,https://www.youtube.com/channel/UC34pJmu9qIbfPbz7dsGplMg,Zayn & Zayna’s Little Farm,channel URL
+youtube,https://www.youtube.com/channel/UCSL4Dn-FQlvHZiSKipQZMqw,IQRA Cartoon – Prophets & Qur’an Stories,channel URL
+youtube,https://www.youtube.com/channel/UCv4MTx9l_8AqAW9JMm62G9w,DUA KIDS – Qur’an Stories,channel URL
+youtube,https://www.youtube.com/@mia-eq3nv,Quran for Kids (repeat after),@handle
+youtube,https://www.youtube.com/user/NoorKids,Noor Kids,legacy user URL (resolve)
+youtube,https://www.youtube.com/channel/UC2gEb6AwgT2aQBy5cpgl3yQ,The Azharis,channel URL
+youtube,https://www.youtube.com/channel/UCCWaFids65a1POarMZ0_TcA,Miraj Stories,channel URL
+youtube,https://www.youtube.com/playlist?list=PLHG5uxhiqH9ULotm1fcrbTV19t5DzieOq,Islam Channel Kids,playlist hub (optional)
+youtube,https://www.youtube.com/c/One4kids-Zaky/playlists,Little Explorers (via One4Kids),show via channel
+youtube,https://www.youtube.com/@bismillahbuddies8229/videos,Bismillah Buddies,@handle
+youtube,https://www.youtube.com/@FreeQuranEducation,FreeQuranEducation,@handle
+youtube,https://www.youtube.com/c/RealMuslimKidsUSA,Real Muslim Kids USA,custom URL
+youtube,https://www.youtube.com/@islamickidsnational,Islamic Kids National,@handle
+

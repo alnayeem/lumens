@@ -1,0 +1,37 @@
+Lumens Community (MVP scaffold)
+
+Overview
+- Open, multi-community catalog of public media (videos, podcasts) with transparent policies.
+- This repo starts with the core data model, policy stub, and a seed channel list.
+
+What’s here
+- Proto schema: `proto/lumens/v1/media.proto` (canonical MVP entities)
+- Policy stub: `policies/islamic_commons/kids/policy.yaml`
+- Policy schema: `tools/policy_schema.json`
+- Seed channels: `data/channels/islamic_kids.csv`
+
+IDs & conventions
+- Community: slug (e.g., `islamic_commons`)
+- Vertical: `{community}/{vertical}` (e.g., `islamic_commons/kids`)
+- Channel: `yt:{UCID}` (prefix by source)
+- Content: `yt:{VIDEOID}`
+- PolicyDoc: `{scope}/{name}@{version}`
+
+Firestore layout (initial)
+- `communities/{communityId}` → `name`, `default_org_id`, `policy_doc_id`, `enabled_vertical_ids[]`
+- `verticals/{communityId}_{verticalId}` → `name`, `status`, `policy_doc_id`, `restrictions{age_bands[], regions_allowed[], acceptable_topics[]}`, `channel_ids[]`
+- `channels/{channelId}` → `creator_id`, `organization_id?`, `source`, `source_ref`, `title`, `status`
+- `communityChannels/{communityId}_{channelId}` → `community_id`, `channel_id`
+- `content/{contentId}` → `channel_id`, `source_item_id`, `title`, `published_at`, `duration_seconds`, `languages[]`, `regions[]`, `topics[]`, `age_rating{}`, `thumbnails[]`, `provenance{}`, `signals{}`
+- `policies/{scope}_{id}_{version}` → `scope`, `version`, `rules` (compiled JSON), `created_at`
+
+Indexes (suggested)
+- `content`: `channel_id ASC, published_at DESC`
+- `content`: `topics ARRAY_CONTAINS, published_at DESC`
+- `verticals`: `status ASC, community_id ASC`
+
+Next steps (suggested)
+- Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.
+- Ingest: fetch video metadata for each channel; write `content/*` with `provenance` and partial `signals`.
+- Policy compile: validate YAML → JSON, store compiled snapshot in `policies/*` (and optionally GCS).
+

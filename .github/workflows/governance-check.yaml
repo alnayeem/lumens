@@ -1,0 +1,36 @@
+name: governance-check
+
+on:
+  pull_request:
+    paths: [ 'policies/**', '.governance/**', 'CODEOWNERS' ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install pyyaml
+      - name: Check config and approvals
+        run: |
+          python - <<'PY'
+          import re, sys, yaml, subprocess
+          with open('.governance/approvers.yaml') as f:
+              cfg = yaml.safe_load(f)
+          diff = subprocess.check_output(["git","diff","--name-only","origin/main...HEAD"]).decode().splitlines()
+          touched = [p for p in diff if p.startswith("policies/")]
+          vkeys=set()
+          for p in touched:
+              m=re.match(r"policies/([^/]+)/([^/]+)/", p)
+              if m: vkeys.add(f"{m.group(1)}/{m.group(2)}")
+          comms=cfg.get("communities",{})
+          missing=[vk for vk in vkeys
+                   if vk.split("/")[0] not in comms
+                   or vk.split("/")[1] not in comms[vk.split("/")[0]].get("verticals", {})]
+          if missing:
+              print(f"::error ::Missing verticals in approvers.yaml: {missing}"); sys.exit(1)
+          print("governance-check: OK")
+          PY
+
