@@ -5,6 +5,7 @@
 .venv/
 venv/
 __pycache__/
+out/
 
 # Node
 node_modules/
