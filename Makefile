@@ -6,7 +6,8 @@ LIMIT?=25
 
 # Select Python/pip executable (override with: make PY=python)
 PY?=python3
-PIP?=pip3
+# Default pip to run under the same Python interpreter
+PIP?=$(PY) -m pip
 
 help:
 	@echo "Targets:"
