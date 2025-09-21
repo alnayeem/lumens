@@ -5,6 +5,7 @@ import time
 from typing import Dict, Iterator, Optional, Tuple
 from urllib.parse import urlencode, urlparse, parse_qs
 from urllib.request import urlopen, Request
+from urllib.error import HTTPError, URLError
 
 
 API_BASE = "https://www.googleapis.com/youtube/v3"
@@ -15,11 +16,37 @@ def http_get_json(path: str, params: Dict[str, str], api_key: str) -> Dict:
     params = {**params, "key": api_key}
     url = f"{API_BASE}{path}?{urlencode(params)}"
     req = Request(url, headers={"User-Agent": "lumens-ingest/0.1"})
-    with urlopen(req, timeout=30) as resp:
-        if resp.status != 200:
-            raise RuntimeError(f"HTTP {resp.status} for {url}")
-        data = resp.read()
-        return json.loads(data.decode("utf-8"))
+    try:
+        with urlopen(req, timeout=30) as resp:
+            data = resp.read()
+            if resp.status != 200:
+                # Attempt to surface error JSON details even on non-200
+                try:
+                    detail = json.loads(data.decode("utf-8")).get("error", {}).get("message", "")
+                except Exception:
+                    detail = (data[:200].decode("utf-8", "ignore") if isinstance(data, (bytes, bytearray)) else str(data))
+                raise RuntimeError(f"HTTP {resp.status} for {url} - {detail}")
+            return json.loads(data.decode("utf-8"))
+    except HTTPError as e:
+        # Read error body for YouTube error details
+        body = ""
+        try:
+            body_bytes = e.read()
+            body = body_bytes.decode("utf-8", "ignore")
+        except Exception:
+            pass
+        detail = ""
+        try:
+            ej = json.loads(body)
+            err = ej.get("error", {})
+            message = err.get("message")
+            reason = (err.get("errors", [{}])[0] or {}).get("reason")
+            detail = f"{message} (reason: {reason})"
+        except Exception:
+            detail = body[:200]
+        raise RuntimeError(f"HTTP {e.code} for {url} - {detail}") from None
+    except URLError as e:
+        raise RuntimeError(f"Network error calling {url}: {e}") from None
 
 
 def backoff_sleep(attempt: int) -> None:
@@ -167,4 +194,3 @@ def iter_playlist_videos(playlist_id: str, api_key: str, limit: int) -> Iterator
         page_token = resp.get("nextPageToken")
         if not page_token or fetched >= limit:
             break
-
