@@ -18,6 +18,7 @@ p { margin: 0; color: var(--muted); }
 .hero-channel { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
 .hero-note { margin: 0 0 6px; font-size: 12px; color: var(--muted); }
 .watch { color: var(--accent); }
+.subscribe { margin-top: 8px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 24px; }
 .card { background: var(--card); border: 1px solid #1f2937; border-radius: 8px; overflow: hidden; }
 .card img { width: 100%; height: 146px; object-fit: cover; display: block; }

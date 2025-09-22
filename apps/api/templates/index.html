@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ title }}</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <!-- YouTube Subscribe Button (official) -->
+    <script async defer src="https://apis.google.com/js/platform.js"></script>
   </head>
   <body>
     <header>
@@ -15,6 +17,7 @@
     <section class="hero">
       <div class="player">
         <iframe
+          id="hero-iframe"
           src="{{ featured.embed }}"
           title="YouTube video player"
           frameborder="0"
@@ -25,17 +28,26 @@
         ></iframe>
       </div>
       <div class="hero-meta">
-        <h2 class="hero-title">{{ featured.title }}</h2>
-        <p class="hero-channel">{{ featured.channel_title }} • {{ featured.published_at }}</p>
+        <h2 id="hero-title" class="hero-title">{{ featured.title }}</h2>
+        <p id="hero-channel" class="hero-channel">{{ featured.channel_title }} • {{ featured.published_at }}</p>
         <p class="hero-note">We embed the official YouTube player so creators retain ads and monetization.</p>
-        <p><a class="watch" href="{{ featured.url }}" target="_blank" rel="noopener noreferrer">Watch on YouTube →</a></p>
+        <p><a id="hero-watch" class="watch" href="{{ featured.url }}" target="_blank" rel="noopener noreferrer">Watch on YouTube →</a></p>
+        <div class="subscribe">
+          <div id="hero-subscribe" class="g-ytsubscribe" data-channelid="{{ featured.channel_id }}" data-layout="default" data-count="default"></div>
+        </div>
       </div>
     </section>
     {% endif %}
     <main class="grid">
       {% for it in items %}
       <article class="card">
-        <a href="{{ it.url }}" target="_blank" rel="noopener noreferrer">
+        <a class="card-link" href="{{ it.url }}" target="_blank" rel="noopener noreferrer"
+           data-embed="{{ it.embed }}"
+           data-url="{{ it.url }}"
+           data-title="{{ it.title }}"
+           data-channel="{{ it.channel_title }}"
+           data-date="{{ it.published_at }}"
+           data-channelid="{{ it.channel_id }}">
           {% if it.thumb %}
           <img src="{{ it.thumb }}" alt="thumbnail" />
           {% endif %}
@@ -48,5 +60,54 @@
       </article>
       {% endfor %}
     </main>
+    <script>
+      // Update the hero iframe when clicking a card; preserve open-in-new-tab on modifier clicks
+      (function(){
+        const iframe = document.getElementById('hero-iframe');
+        const titleEl = document.getElementById('hero-title');
+        const channelEl = document.getElementById('hero-channel');
+        const watchEl = document.getElementById('hero-watch');
+        document.addEventListener('click', function(e){
+          const a = e.target.closest ? e.target.closest('a.card-link') : null;
+          if(!a) return;
+          // Allow new-tab/middle/modified clicks to proceed
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || (e.button !== 0)) {
+            return;
+          }
+          e.preventDefault();
+          const embed = a.getAttribute('data-embed');
+          const url = a.getAttribute('data-url') || a.getAttribute('href');
+          const title = a.getAttribute('data-title') || '';
+          const channel = a.getAttribute('data-channel') || '';
+          const date = a.getAttribute('data-date') || '';
+          const channelId = a.getAttribute('data-channelid') || '';
+          if (embed && iframe) {
+            try {
+              const u = new URL(embed);
+              if (u.hostname.endsWith('youtube.com')) {
+                iframe.src = embed;
+              }
+            } catch (err) {
+              console.warn('Invalid embed URL', embed);
+            }
+          }
+          if (titleEl) titleEl.textContent = title;
+          if (channelEl) channelEl.textContent = channel + (date ? (' • ' + date) : '');
+          if (watchEl && url) watchEl.href = url;
+          // Update subscribe button to the selected channel
+          const sub = document.getElementById('hero-subscribe');
+          if (sub && channelId) {
+            sub.setAttribute('data-channelid', channelId);
+            if (window.gapi && window.gapi.ytsubscribe && typeof window.gapi.ytsubscribe.go === 'function') {
+              window.gapi.ytsubscribe.go();
+            }
+          }
+          const hero = document.querySelector('.hero');
+          if (hero && hero.scrollIntoView) {
+            hero.scrollIntoView({behavior:'smooth', block:'start'});
+          }
+        }, {capture:true});
+      })();
+    </script>
   </body>
   </html>
