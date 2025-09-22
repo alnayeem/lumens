@@ -71,5 +71,33 @@ create_index "--field-config field-path=made_for_kids,order=ASCENDING --field-co
 # 4) topics ARRAY_CONTAINS + published_at DESC
 create_index "--field-config field-path=topics,array-config=CONTAINS --field-config field-path=published_at,order=DESCENDING"
 
-echo "==> Submitted index creations. Build time is typically 1–5 minutes."
+# Extended combinations commonly used in filters
 
+# 5) language + made_for_kids + published_at DESC
+create_index "--field-config field-path=language,order=ASCENDING --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 6) channel_id + language + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=language,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 7) channel_id + made_for_kids + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 8) channel_id + language + made_for_kids + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=language,order=ASCENDING --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 9) topics ARRAY_CONTAINS + language + published_at DESC
+create_index "--field-config field-path=topics,array-config=CONTAINS --field-config field-path=language,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 10) topics ARRAY_CONTAINS + made_for_kids + published_at DESC
+create_index "--field-config field-path=topics,array-config=CONTAINS --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 11) channel_id + topics ARRAY_CONTAINS + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=topics,array-config=CONTAINS --field-config field-path=published_at,order=DESCENDING"
+
+# 12) channel_id + topics ARRAY_CONTAINS + language + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=topics,array-config=CONTAINS --field-config field-path=language,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+# 13) channel_id + topics ARRAY_CONTAINS + made_for_kids + published_at DESC
+create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=topics,array-config=CONTAINS --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
+echo "==> Submitted index creations. Build time is typically 1–5 minutes."
