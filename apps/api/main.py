@@ -25,6 +25,7 @@ def _query_content(
     limit: int,
     channel_id: Optional[str] = None,
     made_for_kids: Optional[bool] = None,
+    language: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     client = _fs_client(project_id)
     from google.cloud.firestore_v1 import FieldFilter  # type: ignore
@@ -35,8 +36,16 @@ def _query_content(
         q = q.where(filter=FieldFilter("channel_id", "==", channel_id))
     if made_for_kids is not None:
         q = q.where(filter=FieldFilter("made_for_kids", "==", made_for_kids))
-    q = q.order_by("published_at", direction=_fs.Query.DESCENDING).limit(limit)
-    return [d.to_dict() for d in q.stream()]
+    if language:
+        q = q.where(filter=FieldFilter("language", "==", language))
+    # Order newest first; if Firestore requires an index and it's missing,
+    # fall back to unordered results instead of failing the page.
+    try:
+        q = q.order_by("published_at", direction=_fs.Query.DESCENDING).limit(limit)
+        return [d.to_dict() for d in q.stream()]
+    except Exception:
+        q = q.limit(limit)
+        return [d.to_dict() for d in q.stream()]
 
 
 def _env() -> Environment:
@@ -66,22 +75,27 @@ def get_content(
     limit: int = Query(24, ge=1, le=100),
     channelId: Optional[str] = None,
     madeForKids: Optional[bool] = Query(None),
+    language: Optional[str] = Query(None),
 ) -> JSONResponse:
     project_id = os.getenv("LUMENS_GCP_PROJECT")
     if not project_id:
         return JSONResponse({"error": "Set LUMENS_GCP_PROJECT"}, status_code=400)
-    items = _query_content(project_id, limit, channelId, madeForKids)
+    items = _query_content(project_id, limit, channelId, madeForKids, language)
     return JSONResponse({"items": items})
 
 
 @app.get("/")
-def home(request: Request, limit: int = Query(24, ge=1, le=100)) -> HTMLResponse:
+def home(
+    request: Request,
+    limit: int = Query(24, ge=1, le=100),
+    lang: Optional[str] = Query("en"),
+) -> HTMLResponse:
     project_id = os.getenv("LUMENS_GCP_PROJECT")
     if not project_id:
         return HTMLResponse(
             "<h3>Set LUMENS_GCP_PROJECT to your GCP project id</h3>", status_code=500
         )
-    items = _query_content(project_id, limit)
+    items = _query_content(project_id, limit, language=lang)
     # Prepare display-friendly fields
     for it in items:
         it["thumb"] = (
