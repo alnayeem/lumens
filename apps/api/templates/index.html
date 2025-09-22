@@ -11,6 +11,27 @@
       <h1>{{ title }}</h1>
       <p>Showing the latest videos across curated channels.</p>
     </header>
+    {% if featured %}
+    <section class="hero">
+      <div class="player">
+        <iframe
+          src="{{ featured.embed }}"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="origin-when-cross-origin"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+      <div class="hero-meta">
+        <h2 class="hero-title">{{ featured.title }}</h2>
+        <p class="hero-channel">{{ featured.channel_title }} • {{ featured.published_at }}</p>
+        <p class="hero-note">We embed the official YouTube player so creators retain ads and monetization.</p>
+        <p><a class="watch" href="{{ featured.url }}" target="_blank" rel="noopener noreferrer">Watch on YouTube →</a></p>
+      </div>
+    </section>
+    {% endif %}
     <main class="grid">
       {% for it in items %}
       <article class="card">
@@ -29,4 +50,3 @@
     </main>
   </body>
   </html>
-

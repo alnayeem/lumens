@@ -90,8 +90,10 @@ def home(request: Request, limit: int = Query(24, ge=1, le=100)) -> HTMLResponse
         )
         vid = it.get("video_id") or it.get("source_item_id")
         it["url"] = it.get("video_url") or (f"https://www.youtube.com/watch?v={vid}" if vid else "#")
+        it["embed"] = f"https://www.youtube.com/embed/{vid}" if vid else None
+
+    featured = items[0] if items else None
     env = _env()
     tpl = env.get_template("index.html")
-    html = tpl.render(items=items, title="Latest Videos")
+    html = tpl.render(items=items, featured=featured, title="Latest Videos")
     return HTMLResponse(html)
-
