@@ -7,6 +7,8 @@ LIMIT?=25
 # Select Python/pip executable (override with: make PY=python)
 # Prefer repo-local virtualenv if present
 PY?=$(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
+# API server port (override with: make run-api PORT=8001)
+PORT?=8000
 # Default pip to run under the same Python interpreter
 PIP?=$(PY) -m pip
 
@@ -78,4 +80,4 @@ query:
 
 run-api:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT to your GCP project id"; exit 2; fi
-	$(PY) -m uvicorn apps.api.main:app --reload --port 8000
+	$(PY) -m uvicorn apps.api.main:app --reload --port $(PORT)
