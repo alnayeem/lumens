@@ -63,6 +63,13 @@ Web demo (reads Firestore)
 - Run: `export LUMENS_GCP_PROJECT=<your-project>` then `make run-api`
 - Open: http://localhost:8000/ for the HTML grid, http://localhost:8000/v1/content for JSON
 
+Firestore indexes (scripted)
+- Create recommended composite indexes (language/channel/kids + published_at):
+  - `export LUMENS_GCP_PROJECT=<your-project>`
+  - `make setup-indexes`
+- Or dry run the exact `gcloud` commands:
+  - `./tools/firestore_indexes.sh -p $LUMENS_GCP_PROJECT --dry-run`
+
 Next steps (suggested)
 - Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.
 - Ingest: fetch video metadata for each channel; write `content/*` with `provenance` and partial `signals`.

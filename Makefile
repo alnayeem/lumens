@@ -1,4 +1,4 @@
-.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query
+.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query setup-indexes
 
 CHANNELS?=data/channels/islamic_kids.csv
 OUT?=out/islamic_kids
@@ -23,6 +23,7 @@ help:
 	@echo "  ingest-cached       Ingest using cached channel mapping (avoids search quota)"
 	@echo "  query               Query Firestore content and print or write NDJSON"
 	@echo "  run-api             Run the FastAPI web app (reads Firestore, serves HTML on /)"
+	@echo "  setup-indexes       Create recommended Firestore composite indexes"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
 	@echo "  install-all         Install dev + ingest deps into current Python ($(PY))"
@@ -81,3 +82,7 @@ query:
 run-api:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT to your GCP project id"; exit 2; fi
 	$(PY) -m uvicorn apps.api.main:app --reload --port $(PORT)
+
+setup-indexes:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT to your GCP project id"; exit 2; fi
+	./tools/firestore_indexes.sh -p $$LUMENS_GCP_PROJECT
