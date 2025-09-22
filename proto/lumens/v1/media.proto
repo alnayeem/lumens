@@ -150,6 +150,8 @@ message ContentItem {
   repeated Thumbnail thumbnails = 11;
   Provenance provenance = 12;
   Signals signals = 13;
+  bool made_for_kids = 14;              // YouTube status.madeForKids when available
+  bool self_declared_made_for_kids = 15; // YouTube status.selfDeclaredMadeForKids
 }
 
 // Community-level channel registry entry
@@ -157,4 +159,3 @@ message CommunityChannel {
   string community_id = 1;              // Community.id
   string channel_id = 2;                // Channel.id
 }
-

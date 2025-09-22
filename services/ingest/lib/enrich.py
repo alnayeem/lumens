@@ -42,7 +42,7 @@ def fetch_videos_info(video_ids: List[str], api_key: str) -> Dict[str, Dict]:
         resp = yt_api(
             "/videos",
             {
-                "part": "contentDetails,statistics,snippet",
+                "part": "contentDetails,statistics,snippet,status",
                 "id": ",".join(batch),
                 "maxResults": "50",
             },
@@ -57,7 +57,7 @@ def fetch_videos_info(video_ids: List[str], api_key: str) -> Dict[str, Dict]:
 
 
 def enrich_records(records: List[Dict], api_key: str) -> None:
-    """Enrich records in-place with duration_seconds, stats, and language."""
+    """Enrich records in-place with duration_seconds, stats, language, and kids flags."""
     ids = [r.get("video_id") for r in records if r.get("video_id")]
     details = fetch_videos_info(ids, api_key)
     for r in records:
@@ -66,6 +66,7 @@ def enrich_records(records: List[Dict], api_key: str) -> None:
         content = info.get("contentDetails", {})
         stats = info.get("statistics", {})
         sn = info.get("snippet", {})
+        status = info.get("status", {})
         if content:
             dur = iso8601_duration_to_seconds(content.get("duration"))
             if dur is not None:
@@ -86,4 +87,9 @@ def enrich_records(records: List[Dict], api_key: str) -> None:
         lang = sn.get("defaultAudioLanguage") or sn.get("defaultLanguage")
         if lang and not r.get("language"):
             r["language"] = lang
-
+        # Kids flags (if present in status)
+        if isinstance(status, dict):
+            if "madeForKids" in status:
+                r["made_for_kids"] = bool(status.get("madeForKids"))
+            if "selfDeclaredMadeForKids" in status:
+                r["self_declared_made_for_kids"] = bool(status.get("selfDeclaredMadeForKids"))

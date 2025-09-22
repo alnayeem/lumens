@@ -56,7 +56,9 @@ def write_outputs(records: Iterable[Dict], out_prefix: Path) -> Tuple[int, Path,
             # include duration/stats if available
             dur = rec.get("duration_seconds")
             stats = rec.get("stats")
-            if dur is not None or stats:
+            kids = rec.get("made_for_kids")
+            sdmfk = rec.get("self_declared_made_for_kids")
+            if dur is not None or stats or kids is not None or sdmfk is not None:
                 ft.write("Info: ")
                 if dur is not None:
                     ft.write(f"duration={dur}s ")
@@ -65,6 +67,10 @@ def write_outputs(records: Iterable[Dict], out_prefix: Path) -> Tuple[int, Path,
                     likes = stats.get("likes")
                     comments = stats.get("comments")
                     ft.write(f"views={views} likes={likes} comments={comments}")
+                if kids is not None:
+                    ft.write(f" kids={kids}")
+                if sdmfk is not None:
+                    ft.write(f" selfDeclaredKids={sdmfk}")
                 ft.write("\n")
             ft.write("---\n")
             count += 1
