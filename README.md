@@ -10,6 +10,7 @@ What’s here
 - Policy schema: `tools/policy_schema.json`
 - Seed channels: `data/channels/islamic_kids.csv`
 - Ingest CLI: `services/ingest/yt_ingest.py` (fetch latest YT videos)
+- Web/API (FastAPI): `apps/api` — serves JSON and a simple HTML grid of latest videos from Firestore
 
 IDs & conventions
 - Community: slug (e.g., `islamic_commons`)
@@ -56,6 +57,11 @@ Optional: Write to Firestore (dev)
 - Run ingest + Firestore write:
   - `make ingest-fs LIMIT=25`
   - or: `python -m services.ingest.cli --channels data/channels/islamic_kids.csv --out out/islamic_kids --limit 25 --firestore-project $LUMENS_GCP_PROJECT`
+
+Web demo (reads Firestore)
+- Install: `make install-ingest` (for google-cloud-firestore) and `$(PY) -m pip install fastapi uvicorn jinja2`
+- Run: `export LUMENS_GCP_PROJECT=<your-project>` then `make run-api`
+- Open: http://localhost:8000/ for the HTML grid, http://localhost:8000/v1/content for JSON
 
 Next steps (suggested)
 - Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.

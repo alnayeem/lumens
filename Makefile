@@ -20,6 +20,7 @@ help:
 	@echo "  resolve-channels    Resolve channel refs to UCIDs and cache mapping"
 	@echo "  ingest-cached       Ingest using cached channel mapping (avoids search quota)"
 	@echo "  query               Query Firestore content and print or write NDJSON"
+	@echo "  run-api             Run the FastAPI web app (reads Firestore, serves HTML on /)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
 	@echo "  install-all         Install dev + ingest deps into current Python ($(PY))"
@@ -74,3 +75,7 @@ QUERY_OUT?=
 query:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT or pass --project"; exit 2; fi
 	$(PY) -m services.read.query_content --project $$LUMENS_GCP_PROJECT --channel "$(QUERY_CHANNEL)" --topic "$(QUERY_TOPIC)" --limit $(QUERY_LIMIT) --since "$(QUERY_SINCE)" --out "$(QUERY_OUT)"
+
+run-api:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT to your GCP project id"; exit 2; fi
+	$(PY) -m uvicorn apps.api.main:app --reload --port 8000
