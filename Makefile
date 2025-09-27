@@ -1,4 +1,4 @@
-.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query setup-indexes
+.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query setup-indexes deploy-ingest schedule-ingest setup-project
 
 CHANNELS?=data/channels/islamic_kids.csv
 OUT?=out/islamic_kids
@@ -24,6 +24,9 @@ help:
 	@echo "  query               Query Firestore content and print or write NDJSON"
 	@echo "  run-api             Run the FastAPI web app (reads Firestore, serves HTML on /)"
 	@echo "  setup-indexes       Create recommended Firestore composite indexes"
+	@echo "  deploy-ingest       Build and deploy Cloud Run Job for ingest"
+	@echo "  schedule-ingest     Create/Update Cloud Scheduler job to trigger ingest job"
+	@echo "  setup-project       One-shot project setup (APIs, Firestore, indexes, SA, job, scheduler)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
 	@echo "  install-all         Install dev + ingest deps into current Python ($(PY))"
@@ -85,4 +88,24 @@ run-api:
 
 setup-indexes:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT to your GCP project id"; exit 2; fi
-	./tools/firestore_indexes.sh -p $$LUMENS_GCP_PROJECT
+	bash ./tools/firestore_indexes.sh -p $$LUMENS_GCP_PROJECT
+
+# Deployment helpers
+REGION?=us-central1
+REPO?=lumens
+JOB?=lumens-ingest
+SA_EMAIL?=sa-data-runner@$(LUMENS_GCP_PROJECT).iam.gserviceaccount.com
+CRON?=0 3 * * *
+TZ?=UTC
+
+deploy-ingest:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT"; exit 2; fi
+	bash ./tools/deploy_ingest_job.sh -p $$LUMENS_GCP_PROJECT -r $(REGION) -R $(REPO) -i ingest -j $(JOB) -s $(SA_EMAIL)
+
+schedule-ingest:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT"; exit 2; fi
+	bash ./tools/deploy_ingest_job.sh -p $$LUMENS_GCP_PROJECT -r $(REGION) -R $(REPO) -i ingest -j $(JOB) -s $(SA_EMAIL) --schedule "$(CRON)" --timezone $(TZ)
+
+setup-project:
+	@if [ -z "$(PROJECT_ID)" ]; then echo "Pass PROJECT_ID=... BILLING_ACCOUNT=... REGION=..."; exit 2; fi
+	bash ./tools/setup_project.sh -p $(PROJECT_ID) -r $(REGION) $(if $(BILLING_ACCOUNT),-b $(BILLING_ACCOUNT)) $(if $(CREATE_PROJECT),--create-project) $(if $(FIRESTORE_LOCATION),--firestore-location $(FIRESTORE_LOCATION)) $(if $(REPO),--repo $(REPO)) $(if $(SA_EMAIL),--sa-runner $(SA_EMAIL)) $(if $(YT_KEY_FILE),--yt-api-key-file $(YT_KEY_FILE)) $(if $(CRON),--schedule "$(CRON)") $(if $(TZ),--timezone $(TZ))

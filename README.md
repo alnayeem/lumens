@@ -74,3 +74,21 @@ Next steps (suggested)
 - Resolver: map each CSV `source_ref` to canonical `Channel.id = yt:{UCID}`; create `channels/*` and `communityChannels/*`.
 - Ingest: fetch video metadata for each channel; write `content/*` with `provenance` and partial `signals`.
 - Policy compile: validate YAML → JSON, store compiled snapshot in `policies/*` (and optionally GCS).
+-
+Scheduled ingest (Cloud Run Jobs + Scheduler)
+- Containerize & deploy the ingest job:
+  - `export LUMENS_GCP_PROJECT=<your-project>`
+  - `make deploy-ingest REGION=us-central1`
+- Add a daily schedule (3am UTC by default):
+  - `make schedule-ingest REGION=us-central1 CRON="0 3 * * *" TZ=UTC`
+- Requirements:
+  - Secret Manager secret `lumens-yt-api-key` with your YouTube Data API key
+  - Service account (default in Makefile): `sa-data-runner@<project>.iam.gserviceaccount.com` with roles:
+    - Cloud Run Developer, Secret Manager Secret Accessor, Artifact Registry Reader, Cloud Scheduler Admin (for setup)
+  - APIs enabled: run.googleapis.com, cloudscheduler.googleapis.com, secretmanager.googleapis.com, artifactregistry.googleapis.com, cloudbuild.googleapis.com
+
+One-shot setup for a new project
+- Run the end-to-end script to prepare a fresh project (APIs, Firestore, indexes, SA, job, optional schedule):
+  - `bash tools/setup_project.sh -p <PROJECT_ID> -r us-central1 --create-project -b <BILLING_ACCOUNT> --yt-api-key-file ./yt.key --schedule "0 3 * * *"`
+- Or via Make (pass variables):
+  - `make setup-project PROJECT_ID=<PROJECT_ID> BILLING_ACCOUNT=<BILLING> REGION=us-central1 CREATE_PROJECT=1 YT_KEY_FILE=./yt.key CRON="0 3 * * *" TZ=UTC`
