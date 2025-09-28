@@ -68,9 +68,7 @@ fi
 IMG_URI="$REGION-docker.pkg.dev/$PROJECT/$REPO/$IMAGE:$(date +%Y%m%d-%H%M%S)"
 
 # Build and push via Cloud Build using the root Dockerfile
-# First attempt with a custom GCS logs bucket; if unavailable, fall back to default logging.
-gcloud builds submit . --tag "$IMG_URI" \
-  --gcs-log-dir="gs://$PROJECT-cloudbuild-logs" || \
+# Use default Cloud Build logging to avoid custom bucket permission issues.
 gcloud builds submit . --tag "$IMG_URI"
 
 # Create or update Cloud Run Job
@@ -105,10 +103,8 @@ if [[ -n "$CRON" ]]; then
       --time-zone "$TZ" \
       --http-method POST \
       --uri "$URL" \
-      --oauth-service-account-email "$SA" \
-      --oauth-token-audience "https://run.googleapis.com/" \
-      --headers "Content-Type=application/json" \
-      --message-body "$BODY"
+      --oidc-service-account-email "$SA" \
+      --oidc-token-audience "https://run.googleapis.com/"
   else
     gcloud scheduler jobs create http "$SCHED_NAME" \
       --location "$REGION" \
@@ -116,10 +112,8 @@ if [[ -n "$CRON" ]]; then
       --time-zone "$TZ" \
       --http-method POST \
       --uri "$URL" \
-      --oauth-service-account-email "$SA" \
-      --oauth-token-audience "https://run.googleapis.com/" \
-      --headers "Content-Type=application/json" \
-      --message-body "$BODY"
+      --oidc-service-account-email "$SA" \
+      --oidc-token-audience "https://run.googleapis.com/"
   fi
 fi
 

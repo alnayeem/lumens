@@ -18,6 +18,7 @@ node_modules/
 # Local deploy keys (do not commit)
 tools/deploy_key
 tools/deploy_key.pub
+yt.key
 
 # Terraform (if added later)
 .terraform/
