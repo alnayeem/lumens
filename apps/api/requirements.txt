@@ -1,2 +1,5 @@
+fastapi
+uvicorn
+jinja2
 google-cloud-firestore>=2.15.0
-langdetect>=1.0.9
+

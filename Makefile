@@ -1,4 +1,4 @@
-.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query setup-indexes deploy-ingest schedule-ingest setup-project
+.PHONY: help venv test ingest ingest-no-enrich install-dev install-ingest ingest-fs install-all resolve-channels ingest-cached query setup-indexes deploy-ingest schedule-ingest setup-project deploy-api wipe-content
 
 CHANNELS?=data/channels/islamic_kids.csv
 OUT?=out/islamic_kids
@@ -26,6 +26,8 @@ help:
 	@echo "  setup-indexes       Create recommended Firestore composite indexes"
 	@echo "  deploy-ingest       Build and deploy Cloud Run Job for ingest"
 	@echo "  schedule-ingest     Create/Update Cloud Scheduler job to trigger ingest job"
+	@echo "  deploy-api          Build and deploy Cloud Run Service for web API"
+	@echo "  wipe-content        DANGER: Delete all docs in Firestore collection (default: content)"
 	@echo "  setup-project       One-shot project setup (APIs, Firestore, indexes, SA, job, scheduler)"
 	@echo "  install-dev         Install dev deps (pytest)"
 	@echo "  install-ingest      Install optional ingest deps (google-cloud-firestore)"
@@ -97,6 +99,7 @@ JOB?=lumens-ingest
 SA_EMAIL?=sa-data-runner@$(LUMENS_GCP_PROJECT).iam.gserviceaccount.com
 CRON?=0 3 * * *
 TZ?=UTC
+SERVICE?=lumens-api
 
 deploy-ingest:
 	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT"; exit 2; fi
@@ -109,3 +112,20 @@ schedule-ingest:
 setup-project:
 	@if [ -z "$(PROJECT_ID)" ]; then echo "Pass PROJECT_ID=... BILLING_ACCOUNT=... REGION=..."; exit 2; fi
 	bash ./tools/setup_project.sh -p $(PROJECT_ID) -r $(REGION) $(if $(BILLING_ACCOUNT),-b $(BILLING_ACCOUNT)) $(if $(CREATE_PROJECT),--create-project) $(if $(FIRESTORE_LOCATION),--firestore-location $(FIRESTORE_LOCATION)) $(if $(REPO),--repo $(REPO)) $(if $(SA_EMAIL),--sa-runner $(SA_EMAIL)) $(if $(YT_KEY_FILE),--yt-api-key-file $(YT_KEY_FILE)) $(if $(CRON),--schedule "$(CRON)") $(if $(TZ),--timezone $(TZ))
+
+deploy-api:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT"; exit 2; fi
+	bash ./tools/deploy_api_service.sh -p $$LUMENS_GCP_PROJECT -r $(REGION) -R $(REPO) -i api -s $(SERVICE) -a $(SA_EMAIL)
+
+WIPE_COLLECTION?=content
+WIPE_PAGE_SIZE?=500
+
+wipe-content:
+	@if [ -z "$$LUMENS_GCP_PROJECT" ]; then echo "Set LUMENS_GCP_PROJECT"; exit 2; fi
+	@echo "WARNING: This will delete all documents in collection '$(WIPE_COLLECTION)' in project '$$LUMENS_GCP_PROJECT'."
+	@echo "To proceed non-interactively, re-run with YES=1."
+	@if [ "$(YES)" = "1" ]; then \
+		$(PY) tools/firestore_wipe.py --project $$LUMENS_GCP_PROJECT --collection $(WIPE_COLLECTION) --page-size $(WIPE_PAGE_SIZE) --yes ; \
+	else \
+		$(PY) tools/firestore_wipe.py --project $$LUMENS_GCP_PROJECT --collection $(WIPE_COLLECTION) --page-size $(WIPE_PAGE_SIZE) ; \
+	fi

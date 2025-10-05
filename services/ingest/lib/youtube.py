@@ -115,7 +115,7 @@ def detect_youtube_ref(ref: str) -> Tuple[str, str]:
     return ("query", s)
 
 
-def resolve_channel_id(kind: str, value: str, api_key: str) -> Optional[str]:
+def resolve_channel_id(kind: str, value: str, api_key: str, relevance_language: Optional[str] = None) -> Optional[str]:
     if kind == "channel_id":
         return value
     if kind == "user":
@@ -124,20 +124,26 @@ def resolve_channel_id(kind: str, value: str, api_key: str) -> Optional[str]:
         return items[0]["id"] if items else None
     if kind == "handle":
         q = value.lstrip("@")
-        resp = yt_api("/search", {"part": "snippet", "type": "channel", "q": q, "maxResults": 5}, api_key)
+        params = {"part": "snippet", "type": "channel", "q": q, "maxResults": 5}
+        if relevance_language:
+            params["relevanceLanguage"] = relevance_language
+        resp = yt_api("/search", params, api_key)
         for item in resp.get("items", []):
             cid = item.get("snippet", {}).get("channelId")
             if cid:
                 return cid
         return None
     if kind == "query":
-        resp = yt_api("/search", {"part": "snippet", "type": "channel", "q": value, "maxResults": 1}, api_key)
+        params = {"part": "snippet", "type": "channel", "q": value, "maxResults": 1}
+        if relevance_language:
+            params["relevanceLanguage"] = relevance_language
+        resp = yt_api("/search", params, api_key)
         items = resp.get("items", [])
         return items[0]["snippet"]["channelId"] if items else None
     return None
 
 
-def iter_channel_videos(channel_id: str, api_key: str, limit: int) -> Iterator[Dict]:
+def iter_channel_videos(channel_id: str, api_key: str, limit: int, relevance_language: Optional[str] = None) -> Iterator[Dict]:
     """Yield latest videos for a channel.
 
     Prefers the channel's uploads playlist (playlistItems; 1 unit per call).
@@ -162,6 +168,8 @@ def iter_channel_videos(channel_id: str, api_key: str, limit: int) -> Iterator[D
             "maxResults": str(page_size),
             "type": "video",
         }
+        if relevance_language:
+            params["relevanceLanguage"] = relevance_language
         if page_token:
             params["pageToken"] = page_token
         resp = yt_api("/search", params, api_key)

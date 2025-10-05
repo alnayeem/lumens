@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Tuple
 
 from .youtube import yt_api
 
@@ -85,11 +85,61 @@ def enrich_records(records: List[Dict], api_key: str) -> None:
                 }.items() if v is not None
             }
         lang = sn.get("defaultAudioLanguage") or sn.get("defaultLanguage")
-        if lang and not r.get("language"):
-            r["language"] = lang
+        # Normalize language: store root (e.g., 'en') in 'language' and full tag in 'language_full'
+        if lang:
+            try:
+                norm = str(lang).strip().lower().replace("_", "-")
+                root = norm.split("-", 1)[0]
+            except Exception:
+                norm = str(lang)
+                root = norm
+            if not r.get("language"):
+                r["language"] = root
+            if not r.get("language_full"):
+                r["language_full"] = norm
+
+        # Lightweight text-based language hint from title + description
+        title = (sn.get("title") or "").strip()
+        desc = (sn.get("description") or "").strip()
+        text_lang, text_conf = _detect_text_language(f"{title}\n{desc}")
+        if text_lang:
+            r.setdefault("text_language", text_lang)
+        if text_conf is not None:
+            r.setdefault("text_lang_conf", text_conf)
+
+        # Derived boolean for easy filtering in Firestore queries
+        # Mark as English if either explicit language root is 'en' or text hint is 'en' with reasonable confidence
+        if "is_english" not in r:
+            r["is_english"] = (r.get("language") == "en") or (text_lang == "en" and (text_conf or 0.0) >= 0.7)
         # Kids flags (if present in status)
         if isinstance(status, dict):
             if "madeForKids" in status:
                 r["made_for_kids"] = bool(status.get("madeForKids"))
             if "selfDeclaredMadeForKids" in status:
                 r["self_declared_made_for_kids"] = bool(status.get("selfDeclaredMadeForKids"))
+
+
+def _detect_text_language(text: str) -> Tuple[Optional[str], Optional[float]]:
+    """Detect language of provided text via langdetect; returns (lang, confidence).
+
+    - Uses title + description as a proxy when audio language is mislabeled.
+    - Returns (None, None) if detection is not possible.
+    """
+    try:
+        # Lazy import to avoid mandatory dep at import time
+        from langdetect import detect_langs  # type: ignore
+    except Exception:
+        return None, None
+    try:
+        cleaned = (text or "").strip()
+        if not cleaned or len(cleaned) < 20:
+            return None, None
+        # detect_langs returns list like ['en:0.99','fr:0.01']
+        langs = detect_langs(cleaned)
+        if not langs:
+            return None, None
+        best = max(langs, key=lambda l: l.prob)
+        # langdetect returns e.g., 'en'
+        return getattr(best, 'lang', None), float(getattr(best, 'prob', 0.0))
+    except Exception:
+        return None, None

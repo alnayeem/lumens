@@ -25,6 +25,7 @@ def run_ingest(
     limit: int,
     api_key: str,
     enrich: bool,
+    lang: str = "en",
     firestore_project: str | None = None,
     firestore_collection: str = "content",
     channels_map_path: Path | None = None,
@@ -70,14 +71,14 @@ def run_ingest(
         # Prefer cached mapping
         channel_id = channels_map.get(value) or channels_map.get(row.source_ref)
         if not channel_id:
-            channel_id = resolve_channel_id(kind, value, api_key)
+            channel_id = resolve_channel_id(kind, value, api_key, lang if lang and lang.lower() not in ("any", "*") else None)
         if not channel_id:
             print(f"WARN: could not resolve channel for {row.source_ref}")
             continue
         try:
             fetched_for_channel = 0
             stop_at = state.get(channel_id)
-            for rec in iter_channel_videos(channel_id, api_key, limit):
+            for rec in iter_channel_videos(channel_id, api_key, limit, lang if lang and lang.lower() not in ("any", "*") else None):
                 if rec["video_id"] in seen_video_ids:
                     continue
                 # Incremental stop condition: if we hit the last seen video, stop fetching this channel
@@ -100,6 +101,27 @@ def run_ingest(
             enrich_records(all_records, api_key)
         except Exception as e:
             print(f"WARN: enrichment failed: {e}")
+
+    # Language filtering (default: en). Use derived flags if present.
+    lang_norm = (lang or "").strip().lower()
+    if lang_norm and lang_norm not in ("any", "*"):
+        before = len(all_records)
+        kept: List[Dict] = []
+        for r in all_records:
+            lg = str(r.get("language") or "").lower()
+            lg_full = str(r.get("language_full") or "").lower()
+            text_lg = str(r.get("text_language") or "").lower()
+            conf = r.get("text_lang_conf")
+            is_en = bool(r.get("is_english")) if lang_norm == "en" else False
+            match = False
+            if lang_norm == "en":
+                match = is_en or lg == "en" or lg_full.startswith("en-") or (text_lg == "en" and (conf or 0.0) >= 0.7)
+            else:
+                match = lg == lang_norm or lg_full.startswith(f"{lang_norm}-") or (text_lg == lang_norm and (conf or 0.0) >= 0.7)
+            if match:
+                kept.append(r)
+        all_records = kept
+        print(f"Language filter '{lang_norm}': kept {len(all_records)}/{before}")
 
     total, ndjson_path, text_path = write_outputs(all_records, out_prefix)
     print(f"Wrote {total} records → {ndjson_path} and {text_path}")
@@ -135,6 +157,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--no-enrich", dest="enrich", action="store_false", help="Disable enrichment step to save quota")
     ap.add_argument("--api-key", default=os.getenv("LUMENS_YT_API_KEY"), help="YouTube Data API key (or env LUMENS_YT_API_KEY; .env is auto-loaded if present)")
     ap.add_argument("--firestore-project", default=os.getenv("LUMENS_GCP_PROJECT"), help="If set, write output to Firestore Native in this GCP project (requires ADC)")
+    ap.add_argument("--lang", default="en", help="Preferred language root to keep (default: en; use 'any' to disable)")
     ap.add_argument("--firestore-collection", default="content", help="Firestore collection name (default: content)")
     ap.add_argument("--resolve-out", default=None, help="Resolve channels only and write mapping JSON to this path, then exit")
     ap.add_argument("--channels-map", default=None, help="Path to a JSON mapping (source_ref or handle → channel_id) to avoid search calls")
@@ -148,7 +171,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Resolve-only mode
     if args.resolve_out:
         rows = parse_csv(Path(args.channels))
-        mapping = build_channels_map(rows, str(args.api_key))
+        mapping = build_channels_map(rows, str(args.api_key), (str(args.lang).lower() if str(args.lang).lower() not in ("any", "*") else None))
         save_json(mapping, Path(args.resolve_out))
         print(f"Resolved {len(mapping)} entries → {args.resolve_out}")
         return 0
@@ -159,6 +182,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         int(args.limit),
         str(args.api_key),
         bool(args.enrich),
+        str(args.lang),
         str(args.firestore_project) if args.firestore_project else None,
         str(args.firestore_collection),
         Path(args.channels_map) if args.channels_map else None,

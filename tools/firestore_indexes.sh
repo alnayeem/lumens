@@ -100,4 +100,7 @@ create_index "--field-config field-path=channel_id,order=ASCENDING --field-confi
 # 13) channel_id + topics ARRAY_CONTAINS + made_for_kids + published_at DESC
 create_index "--field-config field-path=channel_id,order=ASCENDING --field-config field-path=topics,array-config=CONTAINS --field-config field-path=made_for_kids,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
 
+# 14) is_english + published_at DESC
+create_index "--field-config field-path=is_english,order=ASCENDING --field-config field-path=published_at,order=DESCENDING"
+
 echo "==> Submitted index creations. Build time is typically 1–5 minutes."
