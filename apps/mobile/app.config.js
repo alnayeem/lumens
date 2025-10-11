@@ -6,7 +6,8 @@ module.exports = () => ({
     name: "Lumens",
     slug: "lumens-mobile",
     version: "0.1.0",
-    sdkVersion: "51.0.0",
+    // Match installed Expo Go (SDK 54). Remove or keep in sync.
+    sdkVersion: "54.0.0",
     orientation: "portrait",
     // Optionally add app icons under ./assets and reference here
     userInterfaceStyle: "automatic",
