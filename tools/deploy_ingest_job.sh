@@ -94,7 +94,16 @@ if [[ -n "$CRON" ]]; then
   # Ensure scheduler API is enabled
   gcloud services enable cloudscheduler.googleapis.com
   SCHED_NAME="${JOB}-schedule"
-  URL="https://run.googleapis.com/apis/run.googleapis.com/v1/projects/$PROJECT/locations/$REGION/jobs/$JOB:run"
+  # Use region-specific endpoint (namespaces form is most compatible)
+  API_HOST="https://$REGION-run.googleapis.com"
+  # Prefer namespaces form; fallback to projects/locations if you want by changing this line
+  URL="$API_HOST/apis/run.googleapis.com/v1/namespaces/$PROJECT/jobs/$JOB:run"
+  # For Google APIs, prefer OAuth access tokens over OIDC ID tokens
+  OAUTH_SCOPE="https://www.googleapis.com/auth/cloud-platform"
+  if [[ -z "$SA" ]]; then
+    echo "ERROR: --service-account is required when using --schedule" >&2
+    exit 2
+  fi
   BODY='{}'
   if gcloud scheduler jobs describe "$SCHED_NAME" --location "$REGION" >/dev/null 2>&1; then
     gcloud scheduler jobs update http "$SCHED_NAME" \
@@ -103,8 +112,8 @@ if [[ -n "$CRON" ]]; then
       --time-zone "$TZ" \
       --http-method POST \
       --uri "$URL" \
-      --oidc-service-account-email "$SA" \
-      --oidc-token-audience "https://run.googleapis.com/"
+      --oauth-service-account-email "$SA" \
+      --oauth-token-scope "$OAUTH_SCOPE"
   else
     gcloud scheduler jobs create http "$SCHED_NAME" \
       --location "$REGION" \
@@ -112,8 +121,8 @@ if [[ -n "$CRON" ]]; then
       --time-zone "$TZ" \
       --http-method POST \
       --uri "$URL" \
-      --oidc-service-account-email "$SA" \
-      --oidc-token-audience "https://run.googleapis.com/"
+      --oauth-service-account-email "$SA" \
+      --oauth-token-scope "$OAUTH_SCOPE"
   fi
 fi
 
