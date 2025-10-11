@@ -20,7 +20,7 @@ export default function LatestScreen({ navigation }: Props) {
   const load = useCallback(async (next = false) => {
     try {
       if (next) setLoadingMore(true); else setLoading(true);
-      const res = await fetchContent({ language: 'en', limit: 24, cursor: next ? cursor : null });
+      const res = await fetchContent({ limit: 24, cursor: next ? cursor : null });
       setItems(next ? [...items, ...(res.items || [])] : (res.items || []));
       setCursor(res.nextCursor ?? null);
     } catch (e: any) {
@@ -93,4 +93,3 @@ const styles = StyleSheet.create({
   title: { marginTop: 6, fontSize: 14, fontWeight: '600' },
   meta: { color: '#666', marginTop: 2, fontSize: 12 }
 });
-

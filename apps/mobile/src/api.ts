@@ -9,7 +9,10 @@ export const API = PUBLIC_BASE || EXTRA_BASE || 'https://YOUR_CLOUD_RUN_URL';
 console.log('API_BASE in app:', API);
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`);
+  const url = `${API}${path}`;
+  console.log('GET', url);
+  const res = await fetch(url);
+  console.log('RES', res.status, url);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json() as Promise<T>;
 }
