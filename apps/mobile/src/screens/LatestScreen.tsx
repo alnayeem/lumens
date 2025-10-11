@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +18,8 @@ export default function LatestScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
+  const listRef = useRef<FlatList>(null);
 
   const load = useCallback(async (next = false) => {
     try {
@@ -34,6 +36,14 @@ export default function LatestScreen({ navigation }: Props) {
 
   useEffect(() => { load(false); }, []);
 
+  // When items change, default the featured player to the first item
+  useEffect(() => {
+    if (!selectedId && items.length) {
+      const first = extractId(items[0]);
+      if (first) setSelectedId(first);
+    }
+  }, [items, selectedId]);
+
   const extractId = (it: VideoItem): string | undefined => {
     if (it.video_id) return it.video_id;
     const fromEmbed = /\/embed\/([A-Za-z0-9_-]{6,})/.exec(it.embed || '');
@@ -46,18 +56,19 @@ export default function LatestScreen({ navigation }: Props) {
   const openVideo = (it: VideoItem) => {
     const vid = extractId(it);
     if (vid) {
-      navigation.navigate('Swipe', { slug: '', label: 'Latest', initialVideoId: vid });
-      return;
-    }
-    if (it.url) {
+      setSelectedId(vid);
+      // Bring the featured player into view
+      requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }));
+    } else if (it.url) {
       Linking.openURL(it.url).catch(() => {});
     }
   };
 
   const renderItem = ({ item }: { item: VideoItem }) => {
     const thumb = item.thumbnails?.medium?.url || item.thumbnails?.default?.url;
+    const isSelected = extractId(item) === selectedId;
     return (
-      <TouchableOpacity style={styles.card} onPress={() => openVideo(item)} activeOpacity={0.8}>
+      <TouchableOpacity style={[styles.card, isSelected && styles.cardSelected]} onPress={() => openVideo(item)} activeOpacity={0.8}>
         {thumb ? (<Image source={{ uri: thumb }} style={styles.thumb} />) : (<View style={[styles.thumb, styles.thumbPlaceholder]} />)}
         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
         <Text style={styles.meta} numberOfLines={1}>{item.channel_title}</Text>
@@ -65,7 +76,7 @@ export default function LatestScreen({ navigation }: Props) {
     );
   };
 
-  const featuredId = useMemo(() => (items.length ? extractId(items[0]) : undefined), [items]);
+  const featuredId = useMemo(() => selectedId, [selectedId]);
 
   if (loading) return <SafeAreaView style={styles.center}><ActivityIndicator /></SafeAreaView>;
   if (error) return <SafeAreaView style={styles.center}><Text>{error}</Text></SafeAreaView>;
@@ -73,6 +84,7 @@ export default function LatestScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
+        ref={listRef}
         contentContainerStyle={{ padding: GUTTER }}
         data={items}
         keyExtractor={(_, idx) => String(idx)}
@@ -98,6 +110,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   card: { width: CARD_W, },
+  cardSelected: { borderColor: '#1e88e5', borderWidth: 2, borderRadius: 8 },
   thumb: { width: '100%', aspectRatio: 16/9, borderRadius: 8, backgroundColor: '#eee' },
   thumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
   title: { marginTop: 6, fontSize: 14, fontWeight: '600' },
