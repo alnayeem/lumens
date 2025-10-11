@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchCategories, Category } from '../api';
 import type { RootStackParamList } from '../../App';
@@ -50,4 +51,3 @@ const styles = StyleSheet.create({
   rowText: { fontSize: 16 },
   sep: { height: 1, backgroundColor: '#eee' }
 });
-
