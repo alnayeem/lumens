@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Dimensions, FlatList, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchContent, VideoItem } from '../api';
 import type { RootStackParamList } from '../../App';
+import YoutubePlayer from 'react-native-youtube-iframe';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Latest'>;
 
@@ -64,6 +65,8 @@ export default function LatestScreen({ navigation }: Props) {
     );
   };
 
+  const featuredId = useMemo(() => (items.length ? extractId(items[0]) : undefined), [items]);
+
   if (loading) return <SafeAreaView style={styles.center}><ActivityIndicator /></SafeAreaView>;
   if (error) return <SafeAreaView style={styles.center}><Text>{error}</Text></SafeAreaView>;
 
@@ -77,6 +80,12 @@ export default function LatestScreen({ navigation }: Props) {
         numColumns={numColumns}
         columnWrapperStyle={{ gap: GUTTER }}
         ItemSeparatorComponent={() => <View style={{ height: GUTTER }} />}
+        ListHeaderComponent={featuredId ? (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Featured</Text>
+            <YoutubePlayer height={240} play={false} videoId={featuredId} />
+          </View>
+        ) : null}
         onEndReachedThreshold={0.5}
         onEndReached={() => { if (cursor && !loadingMore) load(true); }}
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
