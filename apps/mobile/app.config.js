@@ -24,7 +24,11 @@ module.exports = () => ({
       bundler: "metro"
     },
     extra: {
-      apiBase: process.env.API_BASE || "https://YOUR_CLOUD_RUN_URL"
+      apiBase: process.env.API_BASE || "https://YOUR_CLOUD_RUN_URL",
+      googleExpoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID || undefined,
+      googleAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || undefined,
+      googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || undefined,
+      googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || undefined
     }
   }
 });

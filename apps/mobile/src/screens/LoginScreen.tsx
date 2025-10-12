@@ -1,12 +1,50 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import Constants from 'expo-constants';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const extra = (Constants.expoConfig?.extra || {}) as any;
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: extra.googleExpoClientId,
+    androidClientId: extra.googleAndroidClientId,
+    iosClientId: extra.googleIosClientId,
+    webClientId: extra.googleWebClientId,
+  });
+
+  useEffect(() => {
+    (async () => {
+      if (response?.type === 'success') {
+        try {
+          setLoading(true);
+          const token = response.authentication?.accessToken;
+          if (!token) throw new Error('No access token');
+          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error(`Google userinfo failed: ${res.status}`);
+          const info = await res.json();
+          const mail = info?.email as string | undefined;
+          if (!mail) throw new Error('No email on Google profile');
+          await signIn(mail);
+        } catch (e: any) {
+          setError(e?.message || 'Google sign-in failed');
+        } finally {
+          setLoading(false);
+        }
+      }
+    })();
+  }, [response]);
   const onSubmit = async () => {
     try {
       if (!email.includes('@')) throw new Error('Enter a valid email');
@@ -33,6 +71,15 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.button} onPress={onSubmit} activeOpacity={0.9}>
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
+        <View style={{ height: 12 }} />
+        <TouchableOpacity
+          style={[styles.button, styles.googleBtn, !request && styles.disabled]}
+          disabled={!request || loading}
+          onPress={() => promptAsync({ useProxy: true })}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.buttonText}>Continue with Google</Text>
+        </TouchableOpacity>
         <View style={{ height: 16 }} />
         <Text style={styles.hint}>This demo stores your email locally only.</Text>
       </KeyboardAvoidingView>
@@ -48,7 +95,8 @@ const styles = StyleSheet.create({
   input: { marginTop: 24, width: '100%', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, height: 44 },
   button: { marginTop: 16, width: '100%', backgroundColor: '#1e88e5', height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   buttonText: { color: '#fff', fontWeight: '600' },
+  googleBtn: { backgroundColor: '#4285F4' },
+  disabled: { opacity: 0.6 },
   error: { color: '#d32f2f', marginTop: 8 },
   hint: { color: '#999', fontSize: 12 },
 });
-
