@@ -15,10 +15,14 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const extra = (Constants.expoConfig?.extra || {}) as any;
+  // Fallback: on Expo Go, allow using the Expo/Web client ID for Android/iOS to satisfy the SDK check
+  const expoId = extra.googleExpoClientId || extra.googleWebClientId;
+  const androidId = extra.googleAndroidClientId || expoId;
+  const iosId = extra.googleIosClientId || expoId;
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: extra.googleExpoClientId,
-    androidClientId: extra.googleAndroidClientId,
-    iosClientId: extra.googleIosClientId,
+    expoClientId: expoId,
+    androidClientId: androidId,
+    iosClientId: iosId,
     webClientId: extra.googleWebClientId,
   });
 
