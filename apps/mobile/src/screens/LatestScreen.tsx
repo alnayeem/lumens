@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { fetchContent, VideoItem } from '../api';
 import type { RootStackParamList } from '../../App';
+import { useAuth } from '../auth/AuthContext';
 import YoutubePlayer from 'react-native-youtube-iframe';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Latest'>;
@@ -13,6 +14,7 @@ const GUTTER = 12;
 const CARD_W = (Dimensions.get('window').width - (GUTTER * (numColumns + 1))) / numColumns;
 
 export default function LatestScreen({ navigation }: Props) {
+  const { signOut, user } = useAuth();
   const [items, setItems] = useState<VideoItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,10 @@ export default function LatestScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={{ paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 14, color: '#666' }}>{user?.email}</Text>
+        <TouchableOpacity onPress={() => signOut()}><Text style={{ color: '#1e88e5' }}>Sign out</Text></TouchableOpacity>
+      </View>
       <FlatList
         ref={listRef}
         contentContainerStyle={{ padding: GUTTER }}
