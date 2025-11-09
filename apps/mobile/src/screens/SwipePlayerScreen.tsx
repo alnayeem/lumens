@@ -57,14 +57,28 @@ export default function SwipePlayerScreen({ route }: Props) {
   }).current;
   const viewabilityConfig = useMemo(() => ({ itemVisiblePercentThreshold: 60 }), []);
 
+  const onStateChange = useCallback((state: string, i: number) => {
+    if (state === 'ended') {
+      const nextIndex = i + 1;
+      if (nextIndex < items.length) {
+        setIndex(nextIndex);
+        requestAnimationFrame(() => listRef.current?.scrollToIndex({ index: nextIndex, animated: true }));
+      }
+    }
+  }, [items.length]);
+
   const renderItem = ({ item, index: i }: { item: VideoItem; index: number }) => {
     const vid = extractId(item);
     const playing = i === index;
-    console.log('vid =', vid);
     return (
       <View style={styles.slide}>
         {vid ? (
-          <YoutubePlayer height={240} play={playing} videoId={vid} />
+          <YoutubePlayer
+            height={240}
+            play={playing}
+            videoId={vid}
+            onChangeState={(s) => onStateChange(s, i)}
+          />
         ) : (
           <View style={[styles.slide, styles.center]}><ActivityIndicator /></View>
         )}

@@ -12,6 +12,7 @@ import SwipePlayerScreen from './src/screens/SwipePlayerScreen';
 import type { VideoItem } from './src/api';
 
 export type RootStackParamList = {
+  Intro: undefined;
   Login: undefined;
   Latest: undefined;
   Categories: undefined;
@@ -26,7 +27,8 @@ function RootNavigator() {
   const { user, initializing } = useAuth();
   if (initializing) return null;
   return (
-    <Stack.Navigator initialRouteName={user ? 'Latest' : 'Login'}>
+    <Stack.Navigator initialRouteName={'Intro'}>
+      <Stack.Screen name="Intro" component={require('./src/screens/IntroScreen').default} options={{ headerShown: false }} />
       {!user ? (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       ) : (

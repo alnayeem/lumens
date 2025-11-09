@@ -80,6 +80,17 @@ export default function LatestScreen({ navigation }: Props) {
 
   const featuredId = useMemo(() => selectedId, [selectedId]);
 
+  const onPlayerStateChange = useCallback((state: string) => {
+    if (state === 'ended' && featuredId) {
+      const currentIdx = items.findIndex((it) => extractId(it) === featuredId);
+      const nextItem = currentIdx >= 0 ? items[currentIdx + 1] : undefined;
+      const nextId = nextItem ? extractId(nextItem) : undefined;
+      if (nextId) {
+        setSelectedId(nextId);
+      }
+    }
+  }, [items, featuredId]);
+
   if (loading) return <SafeAreaView style={styles.center}><ActivityIndicator /></SafeAreaView>;
   if (error) return <SafeAreaView style={styles.center}><Text>{error}</Text></SafeAreaView>;
 
@@ -98,10 +109,16 @@ export default function LatestScreen({ navigation }: Props) {
         numColumns={numColumns}
         columnWrapperStyle={{ gap: GUTTER }}
         ItemSeparatorComponent={() => <View style={{ height: GUTTER }} />}
+        stickyHeaderIndices={[0]}
         ListHeaderComponent={featuredId ? (
-          <View style={{ marginBottom: 16 }}>
+          <View style={{ marginBottom: 16, backgroundColor: '#fff' }}>
             <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Featured</Text>
-            <YoutubePlayer height={240} play={false} videoId={featuredId} />
+            <YoutubePlayer
+              height={240}
+              play={true}
+              onChangeState={onPlayerStateChange}
+              videoId={featuredId}
+            />
           </View>
         ) : null}
         onEndReachedThreshold={0.5}

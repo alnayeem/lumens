@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 // Prefer public env at build/run time, then Expo extra, then placeholder
 const PUBLIC_BASE = (process.env as any)?.EXPO_PUBLIC_API_BASE as string | undefined;
 const EXTRA_BASE = (Constants.expoConfig?.extra as any)?.apiBase as string | undefined;
-export const API = PUBLIC_BASE || EXTRA_BASE || 'https://YOUR_CLOUD_RUN_URL';
+export const API = PUBLIC_BASE || EXTRA_BASE || 'https://lumens-api-4qubw3p5lq-uc.a.run.app';
 // Debug: verify API base being used at runtime
 // Note: logs appear in Expo CLI console
 console.log('API_BASE in app:', API);

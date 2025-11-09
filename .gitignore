@@ -2,6 +2,10 @@
 .DS_Store
 *.log
 .env
+# Common env variants (keep out of VCS)
+.env.*
+apps/mobile/.env
+apps/mobile/.env.*
 .venv/
 venv/
 __pycache__/
